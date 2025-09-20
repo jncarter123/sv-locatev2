@@ -70,12 +70,58 @@
             font-size: 0.75rem;
         }
         .coords-box.error { background: #7f1d1d; }
+        .company-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .company-title {
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.2;
+            margin: 0;
+        }
+        .phone-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.875rem;
+            color: #1f2937;
+            text-decoration: none;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .phone-pill:hover { background: #f3f4f6; border-color: #d1d5db; }
+        .phone-icon {
+            width: 14px; height: 14px; display: inline-block;
+        }
+        .phone-text { white-space: nowrap; }
     </style>
 </head>
 <body>
 <div class="page">
     <div class="card">
-        <div class="title">{{ $details->company_name ?? 'Savvy Vessel' }}</div>
+        <div class="company-header">
+            <h2 class="company-title">{{ $details['company_name'] ?? 'Savvy Vessel' }}</h2>
+
+            @php($companyPhone = $details['company_phone'] ?? null)
+            @if(!empty($companyPhone))
+                <a class="phone-pill" href="tel:{{ preg_replace('/\D+/', '', $companyPhone) }}" aria-label="Call {{ $details['company_name'] ?? 'company' }} at {{ $companyPhone }}">
+                    <svg class="phone-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M2.5 5.5c0-1.1.9-2 2-2h2.1c.9 0 1.7.6 1.9 1.4l.7 2.6a2 2 0 0 1-.6 2.1l-1 1a14.5 14.5 0 0 0 6.3 6.3l1-1a2 2 0 0 1 2.1-.6l2.6.7c.8.2 1.4 1 1.4 1.9V19.5c0 1.1-.9 2-2 2h-.5A16.5 16.5 0 0 1 2.5 6v-.5Z" fill="#374151"/>
+                    </svg>
+                    <span class="phone-text">{{ $companyPhone }}</span>
+                </a>
+            @endif
+        </div>
+
+        <div class="row"><span class="label">Call #:</span> <code>{{ $details['call_number'] ?? '—' }}</code></div>
+        <div class="row"><span class="label">Status:</span> <code>{{ $details['call_status'] ?? '—' }}</code></div>
     </div>
 
     <div id="map" role="region" aria-label="User location map"></div>

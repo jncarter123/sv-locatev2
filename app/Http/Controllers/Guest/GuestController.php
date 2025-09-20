@@ -43,6 +43,8 @@ class GuestController extends Controller
                 'token' => $token,
                 'mapsUrl' => config('services.google.maps.base_url'),
                 'mapsKey' => config('services.google.maps.api_key'),
+                'details' => $details,
+                'geofence' => $geofence,
             ]);
         } catch (\Exception $e) {
             abort(500, 'An error occurred while processing your request.');
