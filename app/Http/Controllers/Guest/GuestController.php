@@ -43,6 +43,7 @@ class GuestController extends Controller
                 'token' => $token,
                 'mapsUrl' => config('services.google.maps.base_url'),
                 'mapsKey' => config('services.google.maps.api_key'),
+                'mapId' => config('services.google.maps.map_id'),
                 'details' => $details,
                 'geofence' => $geofence,
             ]);
