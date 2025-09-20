@@ -35,7 +35,7 @@ class GuestController extends Controller
         try {
             $details = $this->cadService->getCallService($tenant, $id, $token);
 
-            $geofence = $this->cadService->getGeofence($tenant, $id, $token);;
+            $geofences = $this->cadService->getGeofence($tenant, $id, $token);;
 
             return view('guest.show', [
                 'tenant' => $tenant,
@@ -45,7 +45,7 @@ class GuestController extends Controller
                 'mapsKey' => config('services.google.maps.api_key'),
                 'mapId' => config('services.google.maps.map_id'),
                 'details' => $details,
-                'geofence' => $geofence,
+                'geofences' => $geofences,
             ]);
         } catch (\Exception $e) {
             abort(500, 'An error occurred while processing your request.');
