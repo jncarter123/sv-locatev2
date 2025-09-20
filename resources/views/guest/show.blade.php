@@ -145,6 +145,8 @@
         let userMarker = null;
         let destMarker = null;
         let userHasInteracted = false;
+        let infoWindow = null;
+        let destClickListener = null;
 
         // Destination details from server
         const callDetails = {!! json_encode($details) !!};
@@ -282,6 +284,29 @@
                 } else {
                     destMarker.setPosition(position);
                 }
+            }
+
+            // Setup clickable info window for destination marker
+            if (!infoWindow) {
+                infoWindow = new google.maps.InfoWindow();
+            }
+            if (destClickListener) {
+                google.maps.event.removeListener(destClickListener);
+                destClickListener = null;
+            }
+            // AdvancedMarkerElement uses 'gmp-click' event
+            if (google.maps.marker && google.maps.marker.AdvancedMarkerElement && destMarker instanceof google.maps.marker.AdvancedMarkerElement) {
+                destClickListener = destMarker.addListener('gmp-click', () => {
+                    infoWindow.setContent(name || 'Destination');
+                    // New InfoWindow open signature with anchor
+                    infoWindow.open({ anchor: destMarker, map, shouldFocus: false });
+                });
+            } else if (destMarker && destMarker.addListener) {
+                // Legacy Marker
+                destClickListener = destMarker.addListener('click', () => {
+                    infoWindow.setContent(name || 'Destination');
+                    infoWindow.open(map, destMarker);
+                });
             }
         }
 
