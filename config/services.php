@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'cad' => [
+        'base_url' => env('CAD_BASE_URL'),
+    ],
+
 ];
