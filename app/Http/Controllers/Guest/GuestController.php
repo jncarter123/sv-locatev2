@@ -2,11 +2,20 @@
 
 namespace App\Http\Controllers\Guest;
 
+use App\Services\CADService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class GuestController extends Controller
 {
+    protected CADService $cadService;
+
+    public function __construct(CADService $cadService)
+    {
+            $this->cadService = $cadService;
+    }
+
+
     /**
      * Display a basic CAD page requiring tenant, id, and token query parameters.
      *
@@ -23,10 +32,20 @@ class GuestController extends Controller
             abort(404);
         }
 
-        return view('guest.show', [
-            'tenant' => $tenant,
-            'id' => $id,
-            'token' => $token,
-        ]);
+        try {
+            $details = $this->cadService->getCallService($tenant, $id, $token);
+
+            $geofence = $this->cadService->getGeofence($tenant, $id, $token);;
+
+            return view('guest.show', [
+                'tenant' => $tenant,
+                'id' => $id,
+                'token' => $token,
+                'mapsUrl' => config('services.google.maps.base_url'),
+                'mapsKey' => config('services.google.maps.api_key'),
+            ]);
+        } catch (\Exception $e) {
+            abort(500, 'An error occurred while processing your request.');
+        }
     }
 }

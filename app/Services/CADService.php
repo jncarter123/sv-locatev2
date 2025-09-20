@@ -9,19 +9,20 @@ use App\Http\Integrations\CAD\Requests\Geofence;
 class CADService
 {
     /**
-     * Handles the process of sending a request to the call service using a provided guest share ID and token.
+     * Retrieves call service data based on the provided tenant, guest share ID, and token.
      *
-     * @param int $guestShareId The ID associated with the guest share.
-     * @param string $token The token used for authentication in the call service request.
+     * @param string $tenant The tenant identifier to use for the request.
+     * @param int $guestShareId The unique identifier for the guest share.
+     * @param string $token The authentication token required for the call service.
      *
-     * @return mixed|null Returns the response as an array if the request is successful, or null if unsuccessful.
+     * @return array|null The call service data as an associative array if the request is successful, or null otherwise.
      *
-     * @throws \Exception Logs an error if an exception occurs during the process, including the message, stack trace, guest share ID, and token.
+     * @throws \Exception If an error occurs while retrieving the call service data, an exception is thrown with details.
      */
-    public function getCallService(int $guestShareId, string $token): ?array
+    public function getCallService(string $tenant, int $guestShareId, string $token): ?array
     {
         try {
-            $connector = new CAD(tenant: 'pm'); // builds https://pm.cad.some.app
+            $connector = new CAD(tenant: $tenant); // builds https://pm.cad.some.app
             $response = $connector->send(new CallService(
                 guestShareId: $guestShareId,
                 token: $token,
@@ -41,16 +42,17 @@ class CADService
     }
 
     /**
-     * Retrieves geofence data based on the provided guest share ID and token.
+     * Executes the process of sending a request to retrieve geofence data using the provided guest share ID and token.
      *
-     * @param int $guestShareId The ID associated with the guest share.
-     * @param string $token The authentication token.
+     * @param string $tenant The tenant identifier used for configuration purposes.
+     * @param int $guestShareId The unique identifier associated with the guest share.
+     * @param string $token The authentication token required for the request to the geofence service.
      *
-     * @return array|null The geofence data as an array if successful, or null on failure.
+     * @return array|null Returns the response as an array if the operation succeeds, or null in case of a failure.
      *
-     * @throws \Exception Catches and logs any exceptions that occur during the process.
+     * @throws \Exception Logs error details, including the exception message, trace, guest share ID, and token, upon encountering an error during the operation.
      */
-    public function getGeofence(int $guestShareId, string $token): ?array
+    public function getGeofence(string $tenant, int $guestShareId, string $token): ?array
     {
         try {
             $connector = new CAD(tenant: 'pm'); // builds https://pm.cad.some.app
