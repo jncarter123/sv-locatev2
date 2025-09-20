@@ -144,6 +144,7 @@
         let map = null;
         let userMarker = null;
         let destMarker = null;
+        let userHasInteracted = false;
 
         // Destination details from server
         const callDetails = {!! json_encode($details) !!};
@@ -240,15 +241,19 @@
             if (!map) {
                 map = new google.maps.Map(mapEl, {
                     center: position,
-                    zoom: 15,
+                    zoom: 13,
                     mapTypeControl: false,
                     streetViewControl: false,
                     fullscreenControl: true,
                     mapId: "{{ $mapId }}"
                 });
-            } else {
-                map.setCenter(position);
+                // Mark that the user has taken control; from now on we don't auto-fit
+                map.addListener('dragstart', () => { userHasInteracted = true; });
+                map.addListener('zoom_changed', () => { userHasInteracted = true; });
+                map.addListener('tilt_changed', () => { userHasInteracted = true; });
+                map.addListener('heading_changed', () => { userHasInteracted = true; });
             }
+            // Do not re-center automatically after map is created; respect user interactions
         }
 
         function setDestinationMarker(lat, lng, name, type) {
@@ -337,7 +342,7 @@
                 updateCoordsBox(latitude, longitude, accuracy);
                 setUserMarker(latitude, longitude);
                 // If both markers exist, fit bounds to show both
-                if (hasDestination && map && typeof google !== 'undefined' && google.maps) {
+                if (hasDestination && map && typeof google !== 'undefined' && google.maps && !userHasInteracted) {
                     const bounds = new google.maps.LatLngBounds();
                     bounds.extend({ lat: destination.lat, lng: destination.lng });
                     bounds.extend({ lat: latitude, lng: longitude });
