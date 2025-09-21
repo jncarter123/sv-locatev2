@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Services\CADService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CADWebhookController
 {
@@ -15,16 +16,29 @@ class CADWebhookController
     }
 
     /**
-     * Clears the cache for the specified tenant and guest share ID using the provided token.
+     * Clears the call service cache for a specific tenant and guest share ID.
      *
-     * @param string $tenant The identifier for the tenant whose cache needs clearing.
-     * @param int $guestShareId The unique identifier for the guest share.
-     * @param string $token The authentication token used to perform the cache clearing operation.
+     * This method validates the incoming request to ensure it includes the required
+     * parameters: tenant, guestShareId, and token. It then attempts to clear the cache
+     * using the provided information. If the operation is successful, a success response
+     * with relevant details is returned. In case of failure, an error response is returned.
      *
+     * @param Request $request The incoming HTTP request containing required parameters.
      * @return JsonResponse A JSON response indicating success or failure of the operation.
+     * @throws \Exception If an unexpected error occurs during the cache-clearing process.
      */
-    public function clearCallServiceCache(string $tenant, int $guestShareId, string $token): JsonResponse
+    public function clearCallServiceCache(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'tenant' => 'required|string',
+            'guestShareId' => 'required|integer',
+            'token' => 'required|string',
+        ]);
+
+        $tenant = $validated['tenant'];
+        $guestShareId = $validated['guestShareId'];
+        $token = $validated['token'];
+
         try {
             $this->cadService->clearCallServiceCache($tenant, $guestShareId, $token);
             return response()->json([
@@ -43,15 +57,27 @@ class CADWebhookController
     }
 
     /**
-     * Clears the geofence cache for a specified tenant and region.
+     * Clears the geofence cache for a specific tenant and region ID.
      *
-     * @param string $tenant The unique identifier for the tenant whose geofence cache is to be cleared.
-     * @param int $regionId The unique identifier for the region associated with the geofence cache.
+     * This method validates the incoming request to ensure it includes the required
+     * parameters: tenant and regionId. It then attempts to clear the geofence cache
+     * using the provided information. If the operation is successful, a success response
+     * with relevant details is returned. In case of failure, an error response is returned.
      *
-     * @return JsonResponse A JSON response detailing the outcome of the cache clearing operation.
+     * @param Request $request The incoming HTTP request containing required parameters.
+     * @return JsonResponse A JSON response indicating success or failure of the operation.
+     * @throws \Exception If an unexpected error occurs during the cache-clearing process.
      */
-    public function clearGeofenceCache(string $tenant, int $regionId): JsonResponse
+    public function clearGeofenceCache(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'tenant' => 'required|string',
+            'regionId' => 'required|integer',
+        ]);
+
+        $tenant = $validated['tenant'];
+        $regionId = $validated['regionId'];
+
         try {
             $this->cadService->clearGeofenceCache($tenant, $regionId);
             return response()->json([
