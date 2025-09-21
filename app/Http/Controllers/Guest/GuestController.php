@@ -35,7 +35,8 @@ class GuestController extends Controller
         try {
             $details = $this->cadService->getCallService($tenant, $id, $token);
 
-            $geofences = $this->cadService->getGeofence($tenant, $id, $token);;
+            $regionId = $details['region_id'];
+            $geofences = $this->cadService->getGeofence($tenant, $id, $token, $regionId);
 
             return view('guest.show', [
                 'tenant' => $tenant,
