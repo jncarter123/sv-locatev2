@@ -130,6 +130,7 @@
     <span id="coords-text" class="coords-text" aria-live="polite">Locating…</span>
     <button id="copy-btn" class="copy-btn" type="button" aria-label="Copy coordinates" disabled>Copy</button>
     <span id="copy-msg" class="copy-success" aria-live="polite" style="display:none;">Copied!</span>
+    <button id="share-btn" class="share-btn" type="button" aria-label="Share coordinates" disabled>Share</button>
 </div>
 
 @vite(['resources/js/app.js'])

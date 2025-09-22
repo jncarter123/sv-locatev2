@@ -2,11 +2,14 @@
 
 namespace App\Http\Integrations\CAD\Requests;
 
+use Saloon\Contracts\Body\HasBody;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
+use Saloon\Traits\Body\HasJsonBody;
 
-class LocationUpdate extends Request
+class UpdateLocation extends Request implements HasBody
 {
+    use HasJsonBody;
     /**
      * The HTTP method of the request
      */
@@ -18,8 +21,8 @@ class LocationUpdate extends Request
     public function __construct(
         private int $guestShareId,
         private string $token,
-        private string $latitude,
-        private string $longitude,
+        private float $latitude,
+        private float $longitude,
     ) {
     }
 
@@ -28,7 +31,7 @@ class LocationUpdate extends Request
      */
     public function resolveEndpoint(): string
     {
-        return "api/guest/{$this->guestShareId}/location/";
+        return "api/guest/{$this->guestShareId}/location";
     }
 
     protected function defaultBody(): array

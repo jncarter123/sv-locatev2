@@ -51,7 +51,8 @@
     function updateCoordsBox(lat, lng, accuracy) {
         lastLat = lat;
         lastLng = lng;
-        coordsTextEl.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}${accuracy ? ` (±${Math.round(accuracy)}m)` : ''}`;
+        //coordsTextEl.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}${accuracy ? ` (±${Math.round(accuracy)}m)` : ''}`;
+        coordsTextEl.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
         coordsBox.classList.remove('error');
         setCopyEnabled(true);
     }
@@ -457,7 +458,7 @@
             updateCoordsBox(latitude, longitude, accuracy);
             setUserMarker(latitude, longitude);
             // Push updates continuously
-            updateGuestLocation(latitude, longitude);
+            //updateGuestLocation(latitude, longitude);
         }, function(error) {
             // For watch errors, just log
             let errorMessage = error && error.message ? error.message : 'WatchPosition error';
