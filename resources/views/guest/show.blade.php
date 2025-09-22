@@ -109,12 +109,12 @@
         <div class="company-header">
             <h2 class="company-title">{{ $details['company_name'] ?? 'Savvy Vessel' }}</h2>
 
-            @if(!empty($details['$companyPhone']))
-                <a class="phone-pill" href="tel:{{ preg_replace('/\D+/', '', $companyPhone) }}" aria-label="Call {{ $details['company_name'] ?? 'company' }} at {{ $companyPhone }}">
+            @if(!empty($details['company_phone']))
+                <a class="phone-pill" href="tel:{{ preg_replace('/\D+/', '', $details['company_phone']) }}" aria-label="Call {{ $details['company_name'] ?? 'company' }} at {{ $details['company_phone'] }}">
                     <svg class="phone-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M2.5 5.5c0-1.1.9-2 2-2h2.1c.9 0 1.7.6 1.9 1.4l.7 2.6a2 2 0 0 1-.6 2.1l-1 1a14.5 14.5 0 0 0 6.3 6.3l1-1a2 2 0 0 1 2.1-.6l2.6.7c.8.2 1.4 1 1.4 1.9V19.5c0 1.1-.9 2-2 2h-.5A16.5 16.5 0 0 1 2.5 6v-.5Z" fill="#374151"/>
                     </svg>
-                    <span class="phone-text">{{ $companyPhone }}</span>
+                    <span class="phone-text">{{ $details['company_phone'] }}</span>
                 </a>
             @endif
         </div>
