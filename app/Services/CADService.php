@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Http\Integrations\CAD\CAD;
 use App\Http\Integrations\CAD\Requests\CallService;
 use App\Http\Integrations\CAD\Requests\Geofence;
+use App\Http\Integrations\CAD\Requests\LocationUpdate;
 use Illuminate\Support\Facades\Cache;
 
 class CADService
@@ -191,5 +192,16 @@ class CADService
             'guestShareId' => $guestShareId,
             'token_hash' => $this->hashToken($token),
         ]);
+    }
+
+    public function updateGuestLocation(string $tenant, int $guestShareId, string $token, string $latitude, string $longitude): void
+    {
+        try {
+            $connector = new CAD(tenant: $tenant);
+            $connector->send(new LocationUpdate($guestShareId, $token, $latitude, $longitude));
+        } catch (\Exception $e) {
+            $this->logError('Update Guest Location Error', $e, $guestShareId, $token);
+            throw new \Exception('Failed to update guest location', 0, $e);
+        }
     }
 }
