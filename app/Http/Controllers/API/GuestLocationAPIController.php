@@ -22,8 +22,8 @@ class GuestLocationAPIController
                 'tenant' => 'required|string',
                 'guestShareId' => 'required|integer',
                 'token' => 'required|string',
-                'latitude' => 'required|string',
-                'longitude' => 'required|string',
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',
             ]);
 
             $tenant = $data['tenant'];

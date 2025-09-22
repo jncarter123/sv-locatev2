@@ -337,6 +337,67 @@
         tryInit();
     }
 
+    // --- API helpers ---
+    async function logToServer(level, message, context) {
+        try {
+            await fetch('/api/guest/logger', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ level, message, context }),
+                credentials: 'same-origin'
+            });
+        } catch (e) {
+            // Swallow client-side logging errors
+            console && console.debug && console.debug('Logger failed', e);
+        }
+    }
+
+    async function updateGuestLocation(latitude, longitude) {
+        try {
+            const ctx = (window.guestContext || {});
+            if (!ctx.tenant || !ctx.guestShareId || !ctx.token) {
+                return; // Missing context; do not attempt
+            }
+            const res = await fetch('/api/guest/location/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    tenant: ctx.tenant,
+                    guestShareId: ctx.guestShareId,
+                    token: ctx.token,
+                    latitude,
+                    longitude
+                }),
+                credentials: 'same-origin'
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                await logToServer('error', 'Failed to update guest location', {
+                    status: res.status,
+                    statusText: res.statusText,
+                    response: text,
+                    latitude,
+                    longitude
+                });
+            }
+        } catch (e) {
+            await logToServer('error', 'Exception while updating guest location', {
+                message: e && e.message,
+                name: e && e.name,
+                latitude,
+                longitude
+            });
+        }
+    }
+
     // Always attempt geolocation to show user's current location and drive the coords box
     if ('geolocation' in navigator) {
         const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 };
@@ -344,6 +405,8 @@
             const { latitude, longitude, accuracy } = pos.coords;
             updateCoordsBox(latitude, longitude, accuracy);
             setUserMarker(latitude, longitude);
+            // Push location to server
+            updateGuestLocation(latitude, longitude);
             // If both markers exist, fit bounds to show both
             if (hasDestination && map && typeof google !== 'undefined' && google.maps && !userHasInteracted) {
                 const bounds = new google.maps.LatLngBounds();
@@ -353,18 +416,83 @@
             } else {
                 triggerMapResize();
             }
-        }, function(err) {
-            showError(err.message || 'Unable to retrieve your location');
+        }, function(error) {
+            let errorMessage = error && error.message ? error.message : 'Unable to retrieve your location';
+            let errorCodeStr = 'UNKNOWN_ERROR';
+            if (error && typeof error.code !== 'undefined') {
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'User denied the request for geolocation';
+                        errorCodeStr = 'PERMISSION_DENIED';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information is unavailable';
+                        errorCodeStr = 'POSITION_UNAVAILABLE';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'The request to get user location timed out';
+                        errorCodeStr = 'TIMEOUT';
+                        break;
+                    default:
+                        errorMessage = error.message || 'An unknown error occurred';
+                        errorCodeStr = 'UNKNOWN_ERROR';
+                        break;
+                }
+            }
+            // Show user-friendly error only if no destination
+            if (!hasDestination) {
+                showError(errorMessage);
+            }
+            // Log geolocation error
+            logToServer('error', 'Failed to get user location', {
+                errorCode: errorCodeStr,
+                errorMessage: errorMessage,
+                rawCode: error && error.code,
+                rawMessage: error && error.message
+            });
         }, options);
 
         navigator.geolocation.watchPosition(function(pos) {
             const { latitude, longitude, accuracy } = pos.coords;
             updateCoordsBox(latitude, longitude, accuracy);
             setUserMarker(latitude, longitude);
-        });
+            // Push updates continuously
+            updateGuestLocation(latitude, longitude);
+        }, function(error) {
+            // For watch errors, just log
+            let errorMessage = error && error.message ? error.message : 'WatchPosition error';
+            let errorCodeStr = 'UNKNOWN_ERROR';
+            if (error && typeof error.code !== 'undefined') {
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'User denied the request for geolocation';
+                        errorCodeStr = 'PERMISSION_DENIED';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information is unavailable';
+                        errorCodeStr = 'POSITION_UNAVAILABLE';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'The request to get user location timed out';
+                        errorCodeStr = 'TIMEOUT';
+                        break;
+                    default:
+                        errorMessage = error.message || 'An unknown error occurred';
+                        errorCodeStr = 'UNKNOWN_ERROR';
+                        break;
+                }
+            }
+            logToServer('error', 'Geolocation watch error', {
+                errorCode: errorCodeStr,
+                errorMessage: errorMessage,
+                rawCode: error && error.code,
+                rawMessage: error && error.message
+            });
+        }, options);
     } else {
         if (!hasDestination) {
             showError('Geolocation is not supported by your browser');
         }
+        logToServer('error', 'Geolocation not supported');
     }
 })();

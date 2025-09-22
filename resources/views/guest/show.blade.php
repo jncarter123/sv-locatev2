@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ $details['company_name'] ?? 'Savvy Vessel' }}</title>
     <style>
@@ -69,7 +70,6 @@
             color: #34d399; /* emerald-400 */
             font-size: 0.75rem;
         }
-        .coords-box.error { background: #7f1d1d; }
         .company-header {
             display: flex;
             align-items: center;
@@ -109,8 +109,7 @@
         <div class="company-header">
             <h2 class="company-title">{{ $details['company_name'] ?? 'Savvy Vessel' }}</h2>
 
-            @php($companyPhone = $details['company_phone'] ?? null)
-            @if(!empty($companyPhone))
+            @if(!empty($details['$companyPhone']))
                 <a class="phone-pill" href="tel:{{ preg_replace('/\D+/', '', $companyPhone) }}" aria-label="Call {{ $details['company_name'] ?? 'company' }} at {{ $companyPhone }}">
                     <svg class="phone-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M2.5 5.5c0-1.1.9-2 2-2h2.1c.9 0 1.7.6 1.9 1.4l.7 2.6a2 2 0 0 1-.6 2.1l-1 1a14.5 14.5 0 0 0 6.3 6.3l1-1a2 2 0 0 1 2.1-.6l2.6.7c.8.2 1.4 1 1.4 1.9V19.5c0 1.1-.9 2-2 2h-.5A16.5 16.5 0 0 1 2.5 6v-.5Z" fill="#374151"/>
@@ -128,7 +127,7 @@
 </div>
 
 <div id="coords" class="coords-box">
-    <span id="coords-text" class="coords-text">Locating…</span>
+    <span id="coords-text" class="coords-text" aria-live="polite">Locating…</span>
     <button id="copy-btn" class="copy-btn" type="button" aria-label="Copy coordinates" disabled>Copy</button>
     <span id="copy-msg" class="copy-success" aria-live="polite" style="display:none;">Copied!</span>
 </div>
@@ -137,8 +136,15 @@
 
 <script>
     // Destination details from server
-    const callDetails = {!! json_encode($details) !!};
-    const geofences = {!! json_encode($geofences) !!};
+    const callDetails = @json($details);
+    const geofences = @json($geofences);
+
+    // Context for guest APIs
+    window.guestContext = @json([
+        'tenant' => $tenant,
+        'guestShareId' => $id,
+        'token' => $token
+    ]);
 </script>
 
 @if(!empty($mapsUrl) && !empty($mapsKey))
