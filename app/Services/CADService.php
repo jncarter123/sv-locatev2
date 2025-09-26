@@ -194,11 +194,11 @@ class CADService
         ]);
     }
 
-    public function updateGuestLocation(string $tenant, int $guestShareId, string $token, float $latitude, float $longitude): void
+    public function updateGuestLocation(string $tenant, int $guestShareId, string $token, float $latitude, float $longitude, ?string $accuracy = null): void
     {
         try {
             $connector = new CAD(tenant: $tenant);
-            $connector->send(new UpdateLocation($guestShareId, $token, $latitude, $longitude));
+            $connector->send(new UpdateLocation($guestShareId, $token, $latitude, $longitude, $accuracy));
         } catch (\Exception $e) {
             $this->logError('Update Guest Location Error', $e, $guestShareId, $token);
             throw new \Exception('Failed to update guest location', 0, $e);

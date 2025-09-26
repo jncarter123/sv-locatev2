@@ -23,6 +23,7 @@ class UpdateLocation extends Request implements HasBody
         private string $token,
         private float $latitude,
         private float $longitude,
+        private ?string $accuracy = null
     ) {
     }
 
@@ -40,6 +41,7 @@ class UpdateLocation extends Request implements HasBody
             'token' => $this->token,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
+            'accuracy' => $this->accuracy
         ];
     }
 }
