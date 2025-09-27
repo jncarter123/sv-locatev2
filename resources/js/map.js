@@ -4,6 +4,11 @@
     const copyBtn = document.getElementById('copy-btn');
     const copyMsg = document.getElementById('copy-msg');
     const mapEl = document.getElementById('map');
+
+    let shareBtn = null;
+    let shareMsg = null;
+    let pendingLocation = null; // Store location data when waiting for share
+
     let lastLat = null, lastLng = null;
     let map = null;
     let userMarker = null;
@@ -14,6 +19,74 @@
     let geofenceOverlays = [];
     let geofencesInitialized = false;
 
+
+    // Initialize share button if needed
+    function initShareButton() {
+        if (shareBtn) return; // Already initialized
+
+        // Check if we need location updates but not auto-request
+        const needsShareButton = callDetails &&
+            callDetails.allow_location_updates &&
+            !callDetails.current_location_locked &&
+            !callDetails.auto_request_location;
+
+        if (!needsShareButton) return;
+
+        // Create share button
+        shareBtn = document.createElement('button');
+        shareBtn.id = 'share-btn';
+        shareBtn.textContent = 'Share Location';
+        shareBtn.style.cssText = `
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        shareBtn.disabled = true; // Initially disabled until location is available
+
+        // Create share message
+        shareMsg = document.createElement('span');
+        shareMsg.id = 'share-msg';
+        shareMsg.textContent = 'Location shared!';
+        shareMsg.style.cssText = `
+            color: #28a745;
+            margin-left: 8px;
+            font-size: 14px;
+            display: none;
+        `;
+
+        // Add to coords box
+        coordsBox.appendChild(shareBtn);
+        coordsBox.appendChild(shareMsg);
+
+        // Add click handler
+        shareBtn.addEventListener('click', () => {
+            if (pendingLocation) {
+                updateGuestLocation(pendingLocation.latitude, pendingLocation.longitude, pendingLocation.accuracy);
+                showShareMessage();
+                pendingLocation = null; // Clear pending location after sharing
+            }
+        });
+    }
+
+    function showShareMessage() {
+        if (shareMsg) {
+            shareMsg.style.display = 'inline';
+            setTimeout(() => {
+                if (shareMsg) shareMsg.style.display = 'none';
+            }, 2000);
+        }
+    }
+
+    function setShareEnabled(enabled) {
+        if (shareBtn) {
+            shareBtn.disabled = !enabled;
+        }
+    }
 
     function setCopyEnabled(enabled) {
         copyBtn.disabled = !enabled;
@@ -51,10 +124,22 @@
     function updateCoordsBox(lat, lng, accuracy) {
         lastLat = lat;
         lastLng = lng;
-        //coordsTextEl.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}${accuracy ? ` (±${Math.round(accuracy)}m)` : ''}`;
-        coordsTextEl.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+        coordsTextEl.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}${accuracy ? ` (±${Math.round(accuracy)}m)` : ''}`;
+        //coordsTextEl.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
         coordsBox.classList.remove('error');
         setCopyEnabled(true);
+
+        // Handle location sharing logic
+        if (callDetails && callDetails.allow_location_updates && !callDetails.current_location_locked) {
+            if (callDetails.auto_request_location) {
+                // Automatically update location
+                updateGuestLocation(lat, lng, accuracy);
+            } else {
+                // Store location for manual sharing and enable share button
+                pendingLocation = { latitude: lat, longitude: lng, accuracy };
+                setShareEnabled(true);
+            }
+        }
     }
 
     function showError(msg) {
@@ -357,7 +442,7 @@
         }
     }
 
-    async function updateGuestLocation(latitude, longitude) {
+    async function updateGuestLocation(latitude, longitude, accuracy) {
         try {
             const ctx = (window.guestContext || {});
             if (!ctx.tenant || !ctx.guestShareId || !ctx.token) {
@@ -375,7 +460,9 @@
                     guestShareId: ctx.guestShareId,
                     token: ctx.token,
                     latitude,
-                    longitude
+                    longitude,
+                    accuracy,
+                    timestamp: new Date().toISOString()
                 }),
                 credentials: 'same-origin'
             });
@@ -399,15 +486,20 @@
         }
     }
 
+
     // Always attempt geolocation to show user's current location and drive the coords box
     if ('geolocation' in navigator) {
+        // Initialize share button before geolocation
+        initShareButton();
+
         const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 };
         navigator.geolocation.getCurrentPosition(function(pos) {
             const { latitude, longitude, accuracy } = pos.coords;
             updateCoordsBox(latitude, longitude, accuracy);
             setUserMarker(latitude, longitude);
-            // Push location to server
-            updateGuestLocation(latitude, longitude);
+
+            // Location update logic is now handled in updateCoordsBox
+
             // If both markers exist, fit bounds to show both
             if (hasDestination && map && typeof google !== 'undefined' && google.maps && !userHasInteracted) {
                 const bounds = new google.maps.LatLngBounds();
@@ -453,12 +545,13 @@
             });
         }, options);
 
+        /*
         navigator.geolocation.watchPosition(function(pos) {
             const { latitude, longitude, accuracy } = pos.coords;
             updateCoordsBox(latitude, longitude, accuracy);
             setUserMarker(latitude, longitude);
             // Push updates continuously
-            //updateGuestLocation(latitude, longitude);
+            //updateGuestLocation(latitude, longitude, accuracy);
         }, function(error) {
             // For watch errors, just log
             let errorMessage = error && error.message ? error.message : 'WatchPosition error';
@@ -490,10 +583,15 @@
                 rawMessage: error && error.message
             });
         }, options);
+        */
     } else {
         if (!hasDestination) {
             showError('Geolocation is not supported by your browser');
         }
         logToServer('error', 'Geolocation not supported');
     }
+
+
+
 })();
+
