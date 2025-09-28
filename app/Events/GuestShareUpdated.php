@@ -16,18 +16,27 @@ class GuestShareUpdated implements ShouldBroadcast
     public string $tenant;
     public int $guestShareId;
     public string $token;
+    public array $guestShareData;
 
-    public function __construct(string $tenant, int $guestShareId, string $token)
+    public function __construct(string $tenant, int $guestShareId, string $token, array $guestShareData)
     {
         $this->tenant = $tenant;
         $this->guestShareId = $guestShareId;
         $this->token = $this->hashToken($token);
+        $this->guestShareData = $guestShareData;
     }
 
     public function broadcastOn(): array
     {
         return [
             new Channel("guest-share.updated.{$this->tenant}.{$this->guestShareId}"),
+        ];
+    }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'guestShareData' => $this->guestShareData,
         ];
     }
 }

@@ -14,17 +14,26 @@ class GeofencesUpdated implements ShouldBroadcast
 
     public string $tenant;
     public string $region;
+    public array $geofences;
 
-    public function __construct(string $tenant, string $region)
+    public function __construct(string $tenant, string $region, array $geofences)
     {
         $this->tenant = $tenant;
         $this->region = $region;
+        $this->geofences = $geofences;
     }
 
     public function broadcastOn(): array
     {
         return [
             new Channel("geofences.updated.{$this->tenant}.{$this->region}"),
+        ];
+    }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'geofences' => $this->geofences,
         ];
     }
 }
