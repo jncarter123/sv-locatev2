@@ -7,10 +7,12 @@ use App\Http\Integrations\CAD\Requests\CallService;
 use App\Http\Integrations\CAD\Requests\Geofence;
 use App\Http\Integrations\CAD\Requests\GuestShare;
 use App\Http\Integrations\CAD\Requests\UpdateLocation;
+use App\Traits\HashToken;
 use Illuminate\Support\Facades\Cache;
 
 class CADService
 {
+    use HashToken;
     // Cache configuration
     private const int GUEST_SHARE_CACHE_TTL_MINUTES = 30;
     private const int CALL_SERVICE_CACHE_TTL_MINUTES = 30;
@@ -234,14 +236,6 @@ class CADService
             $tenant,
             (string) $regionId,
         ]);
-    }
-
-    /**
-     * Generates a SHA-1 hash of the provided token.
-     */
-    private function hashToken(string $token): string
-    {
-        return sha1($token);
     }
 
     /**
