@@ -33,7 +33,9 @@ class GuestController extends Controller
         }
 
         try {
-            $details = $this->cadService->getCallService($tenant, $id, $token);
+            $guestShare = $this->cadService->getGuestShare($tenant, $id, $token);
+
+            $details = $this->cadService->getCallService($tenant, $id, $token, $guestShare['call_service_guid']);
 
             $regionId = $details['region_id'];
             $geofences = $this->cadService->getGeofence($tenant, $id, $token, $regionId);
@@ -45,6 +47,7 @@ class GuestController extends Controller
                 'mapsUrl' => config('services.google.maps.base_url'),
                 'mapsKey' => config('services.google.maps.api_key'),
                 'mapId' => config('services.google.maps.map_id'),
+                'guestShare' => $guestShare,
                 'details' => $details,
                 'geofences' => $geofences,
             ]);

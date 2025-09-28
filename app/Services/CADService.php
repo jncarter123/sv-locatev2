@@ -5,41 +5,75 @@ namespace App\Services;
 use App\Http\Integrations\CAD\CAD;
 use App\Http\Integrations\CAD\Requests\CallService;
 use App\Http\Integrations\CAD\Requests\Geofence;
+use App\Http\Integrations\CAD\Requests\GuestShare;
 use App\Http\Integrations\CAD\Requests\UpdateLocation;
 use Illuminate\Support\Facades\Cache;
 
 class CADService
 {
     // Cache configuration
+    private const int GUEST_SHARE_CACHE_TTL_MINUTES = 30;
     private const int CALL_SERVICE_CACHE_TTL_MINUTES = 30;
     private const int GEOFENCE_CACHE_TTL_MINUTES = 120;
 
     // Cache key parts
+    private const string CACHE_KEY_PREFIX_GUEST_SHARE = 'cad:guest-share';
     private const string CACHE_KEY_PREFIX_CALL_SERVICE = 'cad:call-service';
     private const string CACHE_KEY_PREFIX_GEOFENCE = 'cad:geofence';
     private const string CACHE_KEY_SEPARATOR = ':';
 
     /**
-     * Retrieves call service data for a specific tenant and guest share ID using the provided token.
+     * Retrieves the guest share information for a given tenant, guest share ID, and token.
      *
-     * Makes a cached API request to fetch the call service data.
-     * If an error occurs during the process, it logs the error and throws an exception.
+     * This method utilizes caching to optimize the retrieval process. If the data is not present
+     * in the cache, it will make an external request to fetch the required information.
      *
-     * @param string $tenant The tenant identifier.
-     * @param int $guestShareId The guest share ID.
-     * @param string $token The authentication token.
-     *
-     * @return array|null The retrieved call service data or null if unavailable.
-     *
-     * @throws \Exception If an error occurs while retrieving call service data.
+     * @param string $tenant The identifier for the tenant.
+     * @param int $guestShareId The unique identifier for the guest share.
+     * @param string $token The authentication token associated with the guest share.
+     * @return array|null The guest share information as an associative array, or null if not found.
+     * @throws \Exception If the guest share data cannot be retrieved due to an error.
      */
-    public function getCallService(string $tenant, int $guestShareId, string $token): ?array
+    public function getGuestShare(string $tenant, int $guestShareId, string $token): ?array
+    {
+        try {
+            return $this->fetchWithCache(
+                ttlMinutes: self::GUEST_SHARE_CACHE_TTL_MINUTES,
+                tenant: $tenant,
+                cacheKey: $this->buildGuestShareCacheKey($tenant, $guestShareId, $token),
+                makeRequest: fn (CAD $connector) => $connector->send(new GuestShare(
+                    guestShareId: $guestShareId,
+                    token: $token,
+                )),
+            );
+        } catch (\Exception $e) {
+            $this->logError('Get Call Service Error', $e, $guestShareId, $token);
+            throw new \Exception('Failed to retrieve call service data', 0, $e);
+        }
+    }
+
+    /**
+     * Retrieves the call service data for a given tenant and call service GUID.
+     *
+     * This method utilizes caching to optimize performance. If the data is not in the cache,
+     * it attempts to fetch it using the provided connector and request parameters. In case
+     * of an error during the process, it logs the error and throws an exception.
+     *
+     * @param string $tenant The identifier for the tenant.
+     * @param int $guestShareId The unique identifier for the guest share.
+     * @param string $token The authentication token for the call service.
+     * @param string $callServiceGUID The unique identifier for the call service.
+     * @return array|null The retrieved call service data, or null if not found.
+     *
+     * @throws \Exception If an error occurs while trying to retrieve the call service data.
+     */
+    public function getCallService(string $tenant, int $guestShareId, string $token, string $callServiceGUID): ?array
     {
         try {
             return $this->fetchWithCache(
                 ttlMinutes: self::CALL_SERVICE_CACHE_TTL_MINUTES,
                 tenant: $tenant,
-                cacheKey: $this->buildCallServiceCacheKey($tenant, $guestShareId, $token),
+                cacheKey: $this->buildCallServiceCacheKey($tenant, $callServiceGUID),
                 makeRequest: fn (CAD $connector) => $connector->send(new CallService(
                     guestShareId: $guestShareId,
                     token: $token,
@@ -85,9 +119,9 @@ class CADService
     }
 
     /**
-     * Clears the cache for call service data associated with a specific tenant and guest share ID using the provided token.
+     * Clears the guest share cache for a specific tenant and guest share ID using the provided token.
      *
-     * Removes the cached data for the specified call service, ensuring subsequent calls will retrieve fresh data.
+     * Ensures that the cached data associated with the specified guest share is removed, prompting fresh retrieval when needed.
      *
      * @param string $tenant The tenant identifier.
      * @param int $guestShareId The guest share ID.
@@ -95,9 +129,21 @@ class CADService
      *
      * @return void
      */
-    public function clearCallServiceCache(string $tenant, int $guestShareId, string $token): void
+    public function clearGuestShareCache(string $tenant, int $guestShareId, string $token): void
     {
-        Cache::forget($this->buildCallServiceCacheKey($tenant, $guestShareId, $token));
+        Cache::forget($this->buildGuestShareCacheKey($tenant, $guestShareId, $token));
+    }
+
+    /**
+     * Clears the cached call service data for a given tenant and call service GUID.
+     *
+     * @param string $tenant The identifier for the tenant.
+     * @param string $callServiceGUID The unique identifier for the call service.
+     * @return void
+     */
+    public function clearCallServiceCache(string $tenant, string $callServiceGUID): void
+    {
+        Cache::forget($this->buildCallServiceCacheKey($tenant, $callServiceGUID));
     }
 
     /**
@@ -144,17 +190,37 @@ class CADService
         });
     }
 
+    /**
+     * Builds a cache key for a guest share based on the tenant, guest share ID, and an authentication token.
+     *
+     * This method constructs a unique cache key by combining a predefined prefix, tenant identifier, guest share ID,
+     * and a hashed version of the token, separated by a defined delimiter.
+     *
+     * @param string $tenant The tenant identifier.
+     * @param int $guestShareId The guest share ID.
+     * @param string $token The authentication token.
+     *
+     * @return string The generated cache key.
+     */
+    private function buildGuestShareCacheKey(string $tenant, int $guestShareId, string $token): string
+    {
+        return implode(self::CACHE_KEY_SEPARATOR, [
+            self::CACHE_KEY_PREFIX_GUEST_SHARE,
+            $tenant,
+            (string) $guestShareId,
+            $this->hashToken($token),
+        ]);
+    }
 
     /**
      * Builds a cache key for the call service using tenant identifier, guest share ID, and token.
      */
-    private function buildCallServiceCacheKey(string $tenant, int $guestShareId, string $token): string
+    private function buildCallServiceCacheKey(string $tenant, string $callServiceGUID): string
     {
         return implode(self::CACHE_KEY_SEPARATOR, [
             self::CACHE_KEY_PREFIX_CALL_SERVICE,
             $tenant,
-            (string) $guestShareId,
-            $this->hashToken($token),
+            $callServiceGUID,
         ]);
     }
 
@@ -200,5 +266,11 @@ class CADService
             $this->logError('Update Guest Location Error', $e, $guestShareId, $token);
             throw new \Exception('Failed to update guest location', 0, $e);
         }
+    }
+
+    public function refreshCallServiceCache(string $tenant, int $guestShareId, string $token, string $callServiceGUID): ?array
+    {
+        $this->clearCallServiceCache($tenant, $callServiceGUID);
+        return $this->getCallService($tenant, $guestShareId, $token, $callServiceGUID);
     }
 }

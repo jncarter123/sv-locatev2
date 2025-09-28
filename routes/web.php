@@ -12,5 +12,8 @@ Route::get('/', [GuestController::class, 'show'])->name('guest.index');
 Route::post('/api/guest/logger', [GuestLoggerAPIController::class, 'logger'])->name('api.guest.logger');
 Route::post('/api/guest/location',[GuestLocationAPIController::class, 'updateLocation'])->name('api.guest.location.update');
 
+Route::post('/webhooks/cad/cache/guest-share/clear', [CADWebhookController::class, 'clearGuestShareCache'])->name('webhook.cad.guest-share.clear');
 Route::post('/webhooks/cad/cache/call-service/clear', [CADWebhookController::class, 'clearCallServiceCache'])->name('webhook.cad.call-service.clear');
 Route::post('/webhooks/cad/cache/geofence/clear', [CADWebhookController::class, 'clearGeofenceCache'])->name('webhook.cad.geofence.clear');
+
+Route::post('/webhooks/cad/cache/call-service/refresh', [CADWebhookController::class, 'refreshCallServiceCache'])->name('webhook.cad.call-service.refresh');
