@@ -37,7 +37,6 @@ class CADService
     {
         try {
             return $this->fetchWithCache(
-                prefix: self::CACHE_KEY_PREFIX_CALL_SERVICE,
                 ttlMinutes: self::CALL_SERVICE_CACHE_TTL_MINUTES,
                 tenant: $tenant,
                 cacheKey: $this->buildCallServiceCacheKey($tenant, $guestShareId, $token),
@@ -71,7 +70,6 @@ class CADService
     {
         try {
             return $this->fetchWithCache(
-                prefix: self::CACHE_KEY_PREFIX_GEOFENCE,
                 ttlMinutes: self::GEOFENCE_CACHE_TTL_MINUTES,
                 tenant: $tenant,
                 cacheKey: $this->buildGeofenceCacheKey($tenant, $regionId),
@@ -123,7 +121,7 @@ class CADService
      * This method attempts to fetch data from the cache. If the cache does not contain the data,
      * it invokes the provided callable to make a request and store the result in the cache for a specified duration.
      *
-     * @param string $prefix A prefix to organize or categorize the cache key.
+     *
      * @param int $ttlMinutes The time-to-live for the cache entry, in minutes.
      * @param string $tenant The tenant identifier to be used in creating the connector.
      * @param string $cacheKey The unique key used for caching the response.
@@ -132,7 +130,6 @@ class CADService
      * @return array|null The cached or newly retrieved data as an array, or null if the request is unsuccessful.
      */
     private function fetchWithCache(
-        string $prefix,
         int $ttlMinutes,
         string $tenant,
         string $cacheKey,
