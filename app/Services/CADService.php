@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\CallServiceUpdated;
 use App\Http\Integrations\CAD\CAD;
 use App\Http\Integrations\CAD\Requests\CallService;
 use App\Http\Integrations\CAD\Requests\Geofence;
@@ -251,6 +252,18 @@ class CADService
         ]);
     }
 
+    /**
+     * Updates the location details of a guest using provided coordinates and accuracy.
+     *
+     * @param string $tenant The identifier for the tenant.
+     * @param int $guestShareId The unique identifier for the guest share record.
+     * @param string $token The authentication token associated with the guest.
+     * @param float $latitude The latitude of the guest's location.
+     * @param float $longitude The longitude of the guest's location.
+     * @param string|null $accuracy The accuracy of the location data, if available.
+     * @return void
+     * @throws \Exception If the location update process fails.
+     */
     public function updateGuestLocation(string $tenant, int $guestShareId, string $token, float $latitude, float $longitude, ?string $accuracy = null): void
     {
         try {
@@ -262,9 +275,26 @@ class CADService
         }
     }
 
-    public function refreshCallServiceCache(string $tenant, int $guestShareId, string $token, string $callServiceGUID): ?array
+    /**
+     * Refreshes the call service cache for a given tenant and call service GUID.
+     * Clears the existing cache, retrieves updated call service data,
+     * and dispatches a broadcast event with the updated payload.
+     *
+     * @param string $tenant The identifier for the tenant.
+     * @param int $guestShareId The identifier for the guest share.
+     * @param string $token The authentication token for the request.
+     * @param string $callServiceGUID The unique identifier for the call service.
+     * @return void
+     */
+    public function refreshCallServiceCache(string $tenant, int $guestShareId, string $token, string $callServiceGUID): void
     {
+        // Clear existing cache
         $this->clearCallServiceCache($tenant, $callServiceGUID);
-        return $this->getCallService($tenant, $guestShareId, $token, $callServiceGUID);
+
+        // Retrieve updated call service data
+        $callService = $this->getCallService($tenant, $guestShareId, $token, $callServiceGUID);
+
+        // Dispatch the broadcast event with payload
+        event(new CallServiceUpdated($tenant, $callServiceGUID, $callService));
     }
 }

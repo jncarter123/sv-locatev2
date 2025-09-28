@@ -152,12 +152,14 @@ class CADWebhookController
         try {
             $this->cadService->refreshCallServiceCache($tenant, $guestShareId, $token, $callServiceGUID);
             return response()->json([
+                'success' => true,
                 'message' => 'Call service cache refreshed successfully',
                 'tenant' => $tenant,
                 'callServiceGUID' => $callServiceGUID,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
+                'success' => false,
                 'message' => 'Failed to refresh call service cache',
                 'error' => $e->getMessage(),
                 'tenant' => $tenant,
