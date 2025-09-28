@@ -137,6 +137,7 @@
 
 <script>
     // Destination details from server
+    const guestShare = @json($guestShare);
     const callDetails = @json($details);
     const geofences = @json($geofences);
 
