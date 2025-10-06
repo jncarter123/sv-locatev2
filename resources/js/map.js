@@ -25,10 +25,10 @@
         if (shareBtn) return; // Already initialized
 
         // Check if we need location updates but not auto-request
-        const needsShareButton = callDetails &&
-            callDetails.allow_location_updates &&
+        const needsShareButton = callDetails && guestShare &&
             !callDetails.current_location_locked &&
-            !callDetails.auto_request_location;
+            !guestShare.auto_request_location &&
+            guestShare.allow_location_updates;
 
         if (!needsShareButton) return;
 
@@ -130,11 +130,13 @@
         setCopyEnabled(true);
 
         // Handle location sharing logic
-        if (callDetails && callDetails.allow_location_updates && !callDetails.current_location_locked) {
-            if (callDetails.auto_request_location) {
+        if (callDetails && !callDetails.current_location_locked && guestShare && guestShare.allow_location_updates) {
+            if (guestShare.auto_request_location) {
                 // Automatically update location
+                console.log('Auto-updating location');
                 updateGuestLocation(lat, lng, accuracy);
             } else {
+                console.log('Location update pending');
                 // Store location for manual sharing and enable share button
                 pendingLocation = { latitude: lat, longitude: lng, accuracy };
                 setShareEnabled(true);
