@@ -101,6 +101,17 @@
             width: 14px; height: 14px; display: inline-block;
         }
         .phone-text { white-space: nowrap; }
+        .share-btn {
+            appearance: none;
+            border: 1px solid #374151;
+            background: #1f2937;
+            color: #f9fafb;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .share-btn:disabled { opacity: 0.6; cursor: default; }
     </style>
 </head>
 <body>
@@ -120,7 +131,7 @@
         </div>
 
         <div class="row"><span class="label">Call #:</span> <code>{{ $details['call_number'] ?? '—' }}</code></div>
-        <div class="row"><span class="label">Status:</span> <code>{{ $details['call_status'] ?? '—' }}</code></div>
+        {{-- <div class="row"><span class="label">Status:</span> <code>{{ $details['call_status'] ?? '—' }}</code></div> --}}
     </div>
 
     <div id="map" role="region" aria-label="User location map"></div>
@@ -130,7 +141,6 @@
     <span id="coords-text" class="coords-text" aria-live="polite">Locating…</span>
     <button id="copy-btn" class="copy-btn" type="button" aria-label="Copy coordinates" disabled>Copy</button>
     <span id="copy-msg" class="copy-success" aria-live="polite" style="display:none;">Copied!</span>
-    <button id="share-btn" class="share-btn" type="button" aria-label="Share coordinates" disabled>Share</button>
 </div>
 
 @vite(['resources/js/app.js'])

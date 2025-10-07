@@ -35,17 +35,8 @@
         // Create share button
         shareBtn = document.createElement('button');
         shareBtn.id = 'share-btn';
+        shareBtn.className = 'share-btn';
         shareBtn.textContent = 'Share Location';
-        shareBtn.style.cssText = `
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            margin-left: 8px;
-            cursor: pointer;
-            font-size: 14px;
-        `;
         shareBtn.disabled = true; // Initially disabled until location is available
 
         // Create share message
@@ -66,9 +57,15 @@
         // Add click handler
         shareBtn.addEventListener('click', () => {
             if (pendingLocation) {
-                updateGuestLocation(pendingLocation.latitude, pendingLocation.longitude, pendingLocation.accuracy);
-                showShareMessage();
-                pendingLocation = null; // Clear pending location after sharing
+                updateGuestLocation(pendingLocation.latitude, pendingLocation.longitude, pendingLocation.accuracy)
+                    .then((success) => {
+                        if (success) {
+                            showShareMessage();
+                            setShareEnabled(false); // Disable button after successful share
+                            shareBtn.style.display = 'none';
+                            pendingLocation = null; // Clear pending location after sharing
+                        }
+                    });
             }
         });
     }
@@ -448,7 +445,7 @@
         try {
             const ctx = (window.guestContext || {});
             if (!ctx.tenant || !ctx.guestShareId || !ctx.token) {
-                return; // Missing context; do not attempt
+                return false; // Missing context; do not attempt
             }
             const res = await fetch('/api/guest/location/', {
                 method: 'POST',
@@ -477,7 +474,9 @@
                     latitude,
                     longitude
                 });
+                return false;
             }
+            return true;
         } catch (e) {
             await logToServer('error', 'Exception while updating guest location', {
                 message: e && e.message,
@@ -485,6 +484,7 @@
                 latitude,
                 longitude
             });
+            return false;
         }
     }
 
